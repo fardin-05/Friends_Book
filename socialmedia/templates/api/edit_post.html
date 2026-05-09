@@ -1,0 +1,139 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit Post</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+
+/* 🌌 BACKGROUND */
+body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: radial-gradient(circle at top, #0f172a, #020617 70%);
+    color: #fff;
+}
+
+/* ✨ CENTER */
+.wrapper{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+}
+
+/* 💎 CARD */
+.card-box{
+    width:100%;
+    max-width:500px;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(18px);
+    border:1px solid rgba(0,255,255,0.2);
+    border-radius:18px;
+    padding:30px;
+    box-shadow:0 0 25px rgba(0,255,255,0.15);
+    animation:fadeUp 0.6s ease;
+}
+
+@keyframes fadeUp{
+    from{opacity:0; transform:translateY(20px);}
+    to{opacity:1; transform:translateY(0);}
+}
+
+/* 🔵 TITLE */
+h2{
+    text-align:center;
+    color:#00eaff;
+    text-shadow:0 0 10px #00eaff;
+    margin-bottom:20px;
+}
+
+/* 🧾 INPUT */
+input, textarea{
+    background: rgba(255,255,255,0.08) !important;
+    border:1px solid rgba(0,255,255,0.3) !important;
+    border-radius:10px !important;
+    color:white !important;
+}
+
+input:focus, textarea:focus{
+    box-shadow:0 0 15px #00eaff !important;
+}
+
+/* placeholder */
+input::placeholder, textarea::placeholder{
+    color:rgba(255,255,255,0.6);
+}
+
+/* LABEL */
+label{
+    color:#ff4fd8;
+    font-weight:500;
+}
+
+/* 🚀 BUTTON */
+button{
+    width:100%;
+    margin-top:10px;
+    background:linear-gradient(45deg,#00c6ff,#7f00ff);
+    border:none;
+    padding:10px;
+    border-radius:10px;
+    color:white;
+    font-weight:600;
+    transition:0.3s;
+}
+
+button:hover{
+    transform:translateY(-2px);
+    box-shadow:0 0 20px #00c6ff,0 0 30px #7f00ff;
+}
+
+/* 🔙 BACK */
+.back-link{
+    display:block;
+    text-align:center;
+    margin-top:15px;
+    color:#00eaff;
+    text-decoration:none;
+}
+
+.back-link:hover{
+    text-shadow:0 0 10px #00eaff;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="wrapper">
+    <div class="card-box">
+
+        <h2>✏️ Edit Post</h2>
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+
+            <button type="submit">Update Post</button>
+        </form>
+
+        <a href="{% url 'home' %}" class="back-link">⬅ Back to Feed</a>
+
+    </div>
+</div>
+
+<script>
+// auto add bootstrap class
+document.querySelectorAll("input, textarea").forEach(el=>{
+    el.classList.add("form-control");
+});
+</script>
+
+</body>
+</html>

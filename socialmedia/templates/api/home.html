@@ -1,0 +1,586 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FriendsBook</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Poppins', sans-serif;
+    color: #fff;
+    background: radial-gradient(circle at bottom, #050816, #000000 80%);
+    animation: fadeInBody 0.8s ease-in;
+}
+
+@keyframes fadeInBody {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ===== TOPBAR ===== */
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    gap: 10px;
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0,255,255,0.15);
+}
+
+.logo {
+    color: #00eaff;
+    font-weight: bold;
+    font-size: 18px;
+    text-shadow: 0 0 10px #00eaff;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* SEARCH */
+.search-wrap {
+    position: relative;
+    flex: 1;
+    max-width: 340px;
+}
+.search-wrap input {
+    width: 100%;
+    padding: 7px 14px 7px 36px;
+    border-radius: 22px;
+    border: 1px solid rgba(0,255,255,0.3);
+    background: rgba(255,255,255,0.08);
+    color: white;
+    font-size: 14px;
+    outline: none;
+    transition: border 0.2s;
+}
+.search-wrap input:focus { border-color: #00c6ff; }
+.search-wrap input::placeholder { color: rgba(255,255,255,0.4); }
+.search-wrap .search-icon {
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255,255,255,0.4);
+    font-size: 13px;
+}
+
+/* SEARCH DROPDOWN */
+.search-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0; right: 0;
+    background: rgba(10,10,20,0.97);
+    border: 1px solid rgba(0,255,255,0.2);
+    border-radius: 12px;
+    z-index: 9999;
+    max-height: 300px;
+    overflow-y: auto;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+}
+.search-dropdown.show { display: block; }
+.search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    text-decoration: none;
+    color: white;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: background 0.2s;
+}
+.search-result-item:hover { background: rgba(0,198,255,0.08); color: white; }
+.search-result-item img {
+    width: 36px; height: 36px;
+    border-radius: 50%; object-fit: cover;
+    border: 1px solid rgba(0,255,255,0.3);
+}
+.search-result-item .s-name { font-size: 14px; font-weight: 600; }
+.search-result-item .s-email { font-size: 11px; color: rgba(255,255,255,0.4); }
+.search-no-result { padding: 14px; text-align: center; color: rgba(255,255,255,0.3); font-size: 13px; }
+
+/* NAV ICONS */
+.nav-icons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.nav-icon-btn {
+    position: relative;
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+    display: flex; align-items: center; justify-content: center;
+    text-decoration: none;
+    color: rgba(255,255,255,0.7);
+    font-size: 16px;
+    transition: all 0.2s;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+.nav-icon-btn:hover { background: rgba(0,198,255,0.15); color: white; }
+
+.nav-badge {
+    position: absolute;
+    top: -3px; right: -3px;
+    background: linear-gradient(135deg, #7f00ff, #00c6ff);
+    color: white;
+    font-size: 9px; font-weight: 700;
+    min-width: 16px; height: 16px;
+    border-radius: 8px; padding: 0 4px;
+    display: flex; align-items: center; justify-content: center;
+}
+
+/* NOTIFICATION DROPDOWN */
+.notif-wrap { position: relative; }
+.notif-dropdown {
+    display: none;
+    position: absolute;
+    right: 0; top: 46px;
+    width: 280px;
+    background: rgba(10,10,20,0.97);
+    border: 1px solid rgba(255,215,0,0.2);
+    border-radius: 12px;
+    z-index: 9999;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    max-height: 320px;
+    overflow-y: auto;
+}
+.notif-dropdown.show { display: block; }
+.notif-item {
+    padding: 11px 14px;
+    font-size: 13px;
+    color: #ffd700;
+    border-bottom: 1px solid rgba(255,215,0,0.1);
+    transition: 0.2s;
+}
+.notif-item:hover {
+    background: rgba(255,215,0,0.07);
+    transform: translateX(4px);
+}
+.see-all {
+    display: block; text-align: center;
+    padding: 10px; color: #00c6ff;
+    text-decoration: none; font-size: 13px;
+}
+
+/* USER AREA */
+.user-area {
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.profile-link {
+    text-decoration: none;
+    color: #ff4fd8;
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+    transition: 0.2s;
+}
+.profile-link:hover { color: #fff; }
+
+.logout-btn {
+    padding: 6px 12px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    background: linear-gradient(45deg, #ff3b3b, #ff0066);
+    border: none;
+    cursor: pointer;
+    transition: 0.3s;
+    white-space: nowrap;
+}
+.logout-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px #ff3b3b;
+}
+
+/* ===== GLASS ===== */
+.glass {
+    background: rgba(255,255,255,0.05);
+    border-radius: 16px;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0,255,255,0.2);
+    padding: 15px;
+}
+
+/* ===== POST CARD ===== */
+.post-card {
+    border-radius: 16px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(0,255,255,0.15);
+    padding: 15px;
+    margin-bottom: 15px;
+    transition: 0.4s;
+    animation: popUp 0.5s ease;
+}
+@keyframes popUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+.post-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0 25px rgba(0,255,255,0.2);
+}
+
+.post-user { color: #00eaff; font-weight: bold; }
+
+/* REACTIONS */
+.react-btn {
+    display: inline-block;
+    padding: 5px 9px;
+    margin-right: 4px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.25s;
+    font-size: 14px;
+}
+.react-btn:hover { transform: scale(1.25); }
+.react-btn:active { transform: scale(0.9); }
+.like { color: #00c6ff; border: 1px solid #00c6ff; }
+.love { color: #ff3b7d; border: 1px solid #ff3b7d; }
+.haha { color: #ffd93b; border: 1px solid #ffd93b; }
+.care { color: #00ff9f; border: 1px solid #00ff9f; }
+
+/* COMMENT */
+.comment-box {
+    background: rgba(255,255,255,0.05);
+    border-left: 3px solid #00eaff;
+    padding: 8px;
+    border-radius: 8px;
+    margin-top: 6px;
+    transition: 0.3s;
+    font-size: 13px;
+}
+.comment-box:hover { transform: translateX(4px); }
+
+/* INPUT */
+textarea, input[type="text"], input[type="file"] {
+    background: rgba(255,255,255,0.08) !important;
+    color: #fff !important;
+    border: 1px solid rgba(0,255,255,0.3) !important;
+    border-radius: 10px;
+}
+textarea::placeholder, input::placeholder { color: rgba(255,255,255,0.5) !important; }
+textarea:focus, input:focus { outline: none; box-shadow: 0 0 10px #00c6ff; }
+
+h5 { color: #00ff9f; text-shadow: 0 0 10px #00ff9f; }
+
+button {
+    background: linear-gradient(45deg, #7f00ff, #00c6ff);
+    border: none;
+    padding: 6px 14px;
+    border-radius: 10px;
+    color: white;
+    font-weight: 500;
+    transition: 0.3s;
+    cursor: pointer;
+}
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px #00c6ff;
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 768px) {
+    .topbar { flex-wrap: wrap; padding: 8px 12px; gap: 8px; }
+    .logo { font-size: 16px; }
+    .search-wrap { order: 3; max-width: 100%; width: 100%; flex: none; }
+    .nav-icons { order: 2; }
+    .user-area { order: 4; width: 100%; justify-content: space-between; }
+    .profile-link { font-size: 13px; }
+    .col-md-3 { display: none; }
+}
+@media (max-width: 480px) {
+    .post-card { padding: 12px; }
+    .react-btn { padding: 4px 7px; font-size: 12px; }
+}
+
+.post-action-btn {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s;
+    border: 1px solid;
+}
+
+.edit-btn {
+    color: #ffc107;
+    border-color: #ffc107;
+    background: rgba(255,193,7,0.08);
+}
+.edit-btn:hover {
+    background: rgba(255,193,7,0.2);
+    box-shadow: 0 0 12px #ffc107;
+    transform: translateY(-2px);
+    color: #ffc107;
+}
+
+.delete-btn {
+    color: #ff4444;
+    border-color: #ff4444;
+    background: rgba(255,68,68,0.08);
+}
+.delete-btn:hover {
+    background: rgba(255,68,68,0.2);
+    box-shadow: 0 0 12px #ff4444;
+    transform: translateY(-2px);
+    color: #ff4444;
+}
+
+
+</style>
+</head>
+
+<body>
+{% if user.is_authenticated %}
+
+<!-- TOPBAR -->
+<div class="topbar">
+    <div class="logo">🚀 FriendsBook</div>
+
+    <!-- SEARCH -->
+    <div class="search-wrap">
+        <i class="fa fa-search search-icon"></i>
+        <input type="text" id="searchBar" placeholder="Search users..." autocomplete="off">
+        <div class="search-dropdown" id="searchDropdown"></div>
+    </div>
+
+    <!-- NAV ICONS -->
+    <div class="nav-icons">
+
+        <!-- INBOX -->
+        <a href="{% url 'inbox' %}" class="nav-icon-btn" id="inboxBtn" title="Messages">
+            <i class="fa fa-comment"></i>
+            <span class="nav-badge" id="inboxBadge" style="display:none;">0</span>
+        </a>
+
+        <!-- NOTIFICATION -->
+        <div class="notif-wrap">
+            <div class="nav-icon-btn" onclick="toggleNotif()" title="Notifications">
+                <i class="fa fa-bell"></i>
+                {% if unread_count > 0 %}
+                    <span class="nav-badge">{{ unread_count }}</span>
+                {% endif %}
+            </div>
+            <div class="notif-dropdown" id="notifDropdown">
+                {% for n in unread_notifications %}
+                    <div class="notif-item">{{ n.message }}</div>
+                {% empty %}
+                    <div class="notif-item">No new notifications</div>
+                {% endfor %}
+                <a href="{% url 'notifications' %}" class="see-all">See all</a>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- USER -->
+    <div class="user-area">
+        <a href="{% url 'profile' user.email %}" class="profile-link">
+            👤 {{ user.full_name }}
+        </a>
+        <form method="POST" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button class="logout-btn">Logout</button>
+        </form>
+    </div>
+</div>
+
+<!-- MAIN -->
+<div class="container-fluid mt-3">
+<div class="row">
+
+    <!-- LEFT -->
+    <div class="col-md-3">
+        <div class="glass mb-3">
+            <h5>👤 {{ user.full_name }}</h5>
+            <hr>
+            <p>🏠 Home</p>
+            <p>👥 Friends</p>
+            <p>📸 Photos</p>
+        </div>
+    </div>
+
+    <!-- CENTER -->
+    <div class="col-md-6">
+
+        <!-- CREATE POST -->
+        <div class="glass mb-4">
+            <h5>✍️ Create Post</h5>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <textarea name="content" class="form-control mb-2"
+                    placeholder="What's on your mind..."></textarea>
+                <input type="file" name="image" class="form-control mb-2">
+                <button type="submit">Post</button>
+            </form>
+        </div>
+
+        <!-- POSTS -->
+        {% for post in posts %}
+        <div class="post-card">
+            <p class="post-user">
+                <a href="{% url 'profile' post.user.email %}"
+                   style="color:#00eaff; text-decoration:none;">
+                    👤 {{ post.user.full_name }}
+                </a>
+            </p>
+            <p>{{ post.content }}</p>
+
+            {% if post.image %}
+                <img src="{{ post.image.url }}" class="img-fluid rounded mb-2">
+            {% endif %}
+
+            <div class="mb-2">
+                <span class="react-btn like" onclick="reactPost({{ post.id }}, 'like')">👍</span>
+                <span class="react-btn love" onclick="reactPost({{ post.id }}, 'love')">❤️</span>
+                <span class="react-btn haha" onclick="reactPost({{ post.id }}, 'haha')">😂</span>
+                <span class="react-btn care" onclick="reactPost({{ post.id }}, 'care')">🤗</span>
+                <span id="reaction-display-{{ post.id }}">
+                    {{ post.likes.count }} reactions
+                </span>
+            </div>
+
+            <form action="{% url 'add_comment' post.id %}" method="POST" class="mt-2">
+                {% csrf_token %}
+                <input type="text" name="content" class="form-control mb-2"
+                       placeholder="Write comment...">
+                <button>Comment</button>
+            </form>
+
+            {% for comment in post.comments.all %}
+                <div class="comment-box">
+                    <b>{{ comment.user.full_name }}</b><br>
+                    {{ comment.content }}
+                </div>
+            {% endfor %}
+
+            {% if user == post.user or user.is_superuser %}
+<div class="mt-2 d-flex gap-2">
+    <a href="{% url 'edit_post' post.pk %}" class="post-action-btn edit-btn">
+        ✏️ Edit
+    </a>
+    <a href="{% url 'delete_post' post.pk %}" class="post-action-btn delete-btn">
+        🗑️ Delete
+    </a>
+</div>
+{% endif %}
+        </div>
+        {% endfor %}
+
+    </div>
+
+    <!-- RIGHT -->
+    <div class="col-md-3">
+        <div class="glass">
+            <h6>🟢 Online Users</h6>
+            <hr>
+            <p style="background: linear-gradient(to right, #d4af37, #f9e79f);
+                -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                No one is active right now
+            </p>
+        </div>
+    </div>
+
+</div>
+</div>
+
+{% endif %}
+
+<script>
+// ===== REACTIONS =====
+function reactPost(postId, reaction) {
+    fetch(`/react/${postId}/${reaction}/`)
+    .then(r => r.json())
+    .then(data => {
+        const icons = { like:"👍", love:"❤️", haha:"😂", care:"🤗" };
+        document.getElementById(`reaction-display-${postId}`)
+            .innerHTML = (icons[data.reaction] || "") + " " + data.count + " reactions";
+    });
+}
+
+// ===== NOTIFICATION DROPDOWN =====
+function toggleNotif() {
+    document.getElementById("notifDropdown").classList.toggle("show");
+}
+document.addEventListener("click", function(e) {
+    if (!e.target.closest(".notif-wrap")) {
+        document.getElementById("notifDropdown").classList.remove("show");
+    }
+});
+
+// ===== INBOX WEBSOCKET (real-time badge) =====
+const inboxSocket = new WebSocket("ws://" + window.location.host + "/ws/inbox/");
+let inboxCount = 0;
+
+inboxSocket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+    if (data.msg_type === 'seen') return;
+
+    inboxCount++;
+    const badge = document.getElementById("inboxBadge");
+    badge.innerText = inboxCount;
+    badge.style.display = "flex";
+};
+
+// ===== LIVE SEARCH =====
+const searchBar = document.getElementById("searchBar");
+const searchDropdown = document.getElementById("searchDropdown");
+let searchTimer;
+
+searchBar.addEventListener("input", function() {
+    const q = this.value.trim();
+    clearTimeout(searchTimer);
+
+    if (q.length < 1) {
+        searchDropdown.classList.remove("show");
+        searchDropdown.innerHTML = "";
+        return;
+    }
+
+    searchTimer = setTimeout(() => {
+        fetch(`/search/?q=${encodeURIComponent(q)}&format=json`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.results.length === 0) {
+                searchDropdown.innerHTML = `<div class="search-no-result">No users found</div>`;
+            } else {
+                searchDropdown.innerHTML = data.results.map(u => `
+                    <a href="/profile/${u.email}/" class="search-result-item">
+                        <img src="${u.avatar}" alt="">
+                        <div>
+                            <div class="s-name">${u.full_name}</div>
+                            <div class="s-email">${u.email}</div>
+                        </div>
+                    </a>
+                `).join('');
+            }
+            searchDropdown.classList.add("show");
+        });
+    }, 300);
+});
+
+document.addEventListener("click", function(e) {
+    if (!e.target.closest(".search-wrap")) {
+        searchDropdown.classList.remove("show");
+    }
+});
+</script>
+
+</body>
+</html>

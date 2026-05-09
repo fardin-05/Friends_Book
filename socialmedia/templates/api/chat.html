@@ -1,0 +1,717 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat with {{ other_user.full_name }}</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background: #05070a;
+    color: white;
+    font-family: 'Poppins', sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* HEADER */
+.chat-header {
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+.chat-header img {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #7f00ff;
+}
+.chat-header .name { font-weight: 600; font-size: 16px; }
+.back-btn {
+    color: white; text-decoration: none;
+    font-size: 18px; opacity: 0.6;
+    transition: opacity 0.2s;
+}
+.back-btn:hover { opacity: 1; color: white; }
+
+/* CHAT BOX */
+.chat-box {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    scroll-behavior: smooth;
+}
+.chat-box::-webkit-scrollbar { width: 4px; }
+.chat-box::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+}
+
+/* MESSAGE WRAPPER */
+.msg-wrapper {
+    display: flex;
+    flex-direction: column;
+    max-width: 68%;
+}
+.msg-wrapper.me { align-self: flex-end; align-items: flex-end; }
+.msg-wrapper.other { align-self: flex-start; align-items: flex-start; }
+
+.sender-name {
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 3px;
+    padding: 0 4px;
+}
+
+/* TEXT MESSAGE */
+.msg {
+    padding: 9px 14px;
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+    max-width: 100%;
+}
+.me .msg {
+    background: linear-gradient(135deg, #7f00ff, #00c6ff);
+    border-bottom-right-radius: 4px;
+}
+.other .msg {
+    background: #1a1a2e;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-bottom-left-radius: 4px;
+}
+.msg-time {
+    font-size: 10px;
+    color: rgba(255,255,255,0.25);
+    padding: 2px 4px;
+}
+
+/* SEEN INDICATOR */
+.seen-status {
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    padding: 0 4px;
+}
+.seen-status.seen { color: #00c6ff; }
+
+/* IMAGE */
+.msg-image {
+    max-width: 260px;
+    max-height: 260px;
+    width: 100%;
+    border-radius: 14px;
+    object-fit: cover;
+    cursor: pointer;
+    display: block;
+    transition: opacity 0.2s;
+}
+.msg-image:hover { opacity: 0.88; }
+
+/* VIDEO */
+.msg-video {
+    max-width: 260px;
+    width: 100%;
+    border-radius: 14px;
+    display: block;
+    background: #000;
+}
+
+/* FILE */
+.msg-file {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.07);
+    padding: 10px 14px;
+    border-radius: 12px;
+    text-decoration: none;
+    color: white;
+    transition: background 0.2s;
+    min-width: 180px;
+}
+.msg-file:hover { background: rgba(255,255,255,0.13); color: white; }
+.msg-file .file-icon { font-size: 22px; flex-shrink: 0; }
+.msg-file .file-name {
+    font-size: 13px; font-weight: 500;
+    white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; max-width: 160px;
+}
+.msg-file .file-label { font-size: 11px; color: rgba(255,255,255,0.35); }
+
+/* INPUT AREA */
+.input-area {
+    background: rgba(255,255,255,0.03);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    padding: 10px 16px;
+    flex-shrink: 0;
+}
+
+/* FILE PREVIEW */
+.file-preview-area {
+    display: none;
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    align-items: center;
+    gap: 10px;
+}
+.file-preview-area.show { display: flex; }
+.file-preview-area img,
+.file-preview-area video {
+    width: 52px; height: 52px;
+    object-fit: cover; border-radius: 8px;
+}
+.preview-name {
+    font-size: 13px; flex: 1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.preview-size { font-size: 11px; color: rgba(255,255,255,0.35); }
+.remove-file {
+    background: rgba(255,255,255,0.08);
+    border: none; color: white;
+    width: 26px; height: 26px;
+    border-radius: 50%; cursor: pointer;
+    font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.remove-file:hover { background: rgba(255,60,60,0.35); }
+
+/* INPUT ROW */
+.input-row { display: flex; align-items: center; gap: 8px; }
+
+.attach-btn {
+    background: rgba(255,255,255,0.07);
+    border: none; color: rgba(255,255,255,0.55);
+    width: 40px; height: 40px;
+    border-radius: 50%; cursor: pointer;
+    font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.2s;
+}
+.attach-btn:hover { background: rgba(127,0,255,0.3); color: white; }
+
+#msgInput {
+    flex: 1; padding: 9px 16px;
+    border-radius: 22px;
+    border: 1px solid rgba(255,255,255,0.09);
+    background: rgba(255,255,255,0.05);
+    color: white; font-size: 14px; outline: none;
+    transition: border 0.2s;
+}
+#msgInput:focus { border-color: rgba(127,0,255,0.5); }
+#msgInput::placeholder { color: rgba(255,255,255,0.28); }
+
+.send-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%; border: none;
+    background: linear-gradient(135deg, #7f00ff, #00c6ff);
+    color: white; font-size: 15px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: transform 0.2s, opacity 0.2s;
+}
+.send-btn:hover { transform: scale(1.08); }
+.send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* UPLOADING */
+.uploading {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    padding: 4px 8px;
+    display: none;
+}
+.uploading.show { display: block; }
+
+/* LIGHTBOX */
+.lightbox {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.93);
+    z-index: 9999;
+    align-items: center; justify-content: center;
+}
+.lightbox.show { display: flex; }
+.lightbox img {
+    max-width: 95vw; max-height: 92vh;
+    object-fit: contain; border-radius: 8px;
+}
+.lightbox-close {
+    position: absolute; top: 16px; right: 20px;
+    font-size: 30px; color: white; cursor: pointer;
+    opacity: 0.6; transition: opacity 0.2s; line-height: 1;
+}
+.lightbox-close:hover { opacity: 1; }
+
+/* RESPONSIVE */
+@media (max-width: 576px) {
+    .msg-wrapper { max-width: 85%; }
+    .msg-image, .msg-video { max-width: 210px; }
+    .msg { font-size: 13px; }
+    .chat-header { padding: 10px 14px; }
+}
+</style>
+</head>
+
+<body>
+<audio id="msgSound">
+    <source src="{% static 'sounds/msg.mp3' %}" type="audio/mpeg">
+</audio>
+<!-- HEADER -->
+<div class="chat-header">
+    <a href="{% url 'inbox' %}" class="back-btn"><i class="fa fa-arrow-left"></i></a>
+    {% if other_user.profile.profile_picture %}
+        <img src="{{ other_user.profile.profile_picture.url }}" alt="">
+    {% else %}
+        <img src="https://ui-avatars.com/api/?name={{ other_user.full_name }}&background=7f00ff&color=fff" alt="">
+    {% endif %}
+    <div class="name">{{ other_user.full_name }}</div>
+</div>
+
+<!-- CHAT BOX -->
+<div class="chat-box" id="chat-box">
+    {% for msg in messages %}
+    <div class="msg-wrapper {% if msg.sender == request.user %}me{% else %}other{% endif %}">
+        {% if msg.sender != request.user %}
+            <div class="sender-name">{{ msg.sender.full_name }}</div>
+        {% endif %}
+
+        {% if msg.file %}
+            {% if msg.file_type == 'image' %}
+                <img class="msg-image" src="{{ msg.file.url }}" alt="image"
+                     onclick="openLightbox('{{ msg.file.url }}')">
+            {% elif msg.file_type == 'video' %}
+                <video class="msg-video" controls>
+                    <source src="{{ msg.file.url }}">
+                </video>
+            {% elif msg.file_type == 'pdf' %}
+                <a class="msg-file" href="{{ msg.file.url }}" target="_blank">
+                    <i class="fa fa-file-pdf file-icon" style="color:#ff4444;"></i>
+                    <div>
+                        <div class="file-name">{{ msg.file.name|slice:"11:" }}</div>
+                        <div class="file-label">PDF Document</div>
+                    </div>
+                </a>
+            {% elif msg.file_type == 'docx' %}
+                <a class="msg-file" href="{{ msg.file.url }}" target="_blank">
+                    <i class="fa fa-file-word file-icon" style="color:#2b7cd3;"></i>
+                    <div>
+                        <div class="file-name">{{ msg.file.name|slice:"11:" }}</div>
+                        <div class="file-label">Word Document</div>
+                    </div>
+                </a>
+            {% else %}
+                <a class="msg-file" href="{{ msg.file.url }}" target="_blank">
+                    <i class="fa fa-file file-icon" style="color:#aaa;"></i>
+                    <div>
+                        <div class="file-name">{{ msg.file.name|slice:"11:" }}</div>
+                        <div class="file-label">File</div>
+                    </div>
+                </a>
+            {% endif %}
+        {% endif %}
+
+        {% if msg.content %}
+            <div class="msg">{{ msg.content }}</div>
+        {% endif %}
+
+        <div class="msg-time">{{ msg.created_at|date:"H:i" }}</div>
+
+        <!-- SEEN INDICATOR — শুধু নিজের message এ -->
+        {% if msg.sender == request.user %}
+            <div class="seen-status {% if msg.is_seen %}seen{% endif %}"
+                 id="seen-{{ msg.id }}">
+                {% if msg.is_seen %}✓✓{% else %}✓{% endif %}
+            </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <span class="lightbox-close">&times;</span>
+    <img id="lightbox-img" src="" alt="">
+</div>
+
+<!-- INPUT AREA -->
+<div class="input-area">
+    <div class="file-preview-area" id="filePreview">
+        <div id="previewThumb"></div>
+        <div style="flex:1; overflow:hidden;">
+            <div class="preview-name" id="previewName"></div>
+            <div class="preview-size" id="previewSize"></div>
+        </div>
+        <button class="remove-file" onclick="removeFile()"><i class="fa fa-times"></i></button>
+    </div>
+
+    <div class="uploading" id="uploadingText">⏳ Uploading file...</div>
+
+    <input type="file" id="fileInput"
+           accept="image/*,video/*,.pdf,.doc,.docx"
+           style="display:none">
+
+    <div class="input-row">
+        <button class="attach-btn" onclick="document.getElementById('fileInput').click()">
+            <i class="fa fa-paperclip"></i>
+        </button>
+        <input type="text" id="msgInput" placeholder="Type a message...">
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+            <i class="fa fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+const conversationId = {{ conversation.id }};
+const currentUserId = {{ request.user.id }};
+const uploadUrl = "{% url 'upload_chat_file' conversation.id %}";
+const markSeenUrl = "{% url 'mark_seen' conversation.id %}";
+const csrfToken = "{{ csrf_token }}";
+
+// ===== WEBSOCKET =====
+const socket = new WebSocket(
+    "ws://" + window.location.host + "/ws/chat/" + conversationId + "/"
+);
+
+// ✅ Page open হলে auto seen
+socket.onopen = function() {
+    fetch(markSeenUrl, {
+        method: "POST",
+        headers: { "X-CSRFToken": csrfToken }
+    });
+    socket.send(JSON.stringify({ type: 'seen' }));
+};
+
+socket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+
+
+// অন্য user message আসলে
+if (document.hidden) {
+    document.title = "💬 New Message!";
+}
+
+    
+    // ===== SOUND + POPUP =====
+if (data.sender_id !== currentUserId) {
+
+    // sound
+    document.getElementById("msgSound").play();
+
+    // vibration (mobile)
+    if (navigator.vibrate) {
+        navigator.vibrate(200);
+    }
+
+    // popup notification
+    if (Notification.permission === "granted") {
+
+        new Notification(data.sender || "New Message", {
+
+            body: data.message || "📎 Sent a file",
+
+            icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png"
+
+        });
+
+    }
+
+}
+
+
+    // ✅ seen event — return করো, আর কিছু করবে না
+    if (data.msg_type === 'seen') {
+        if (data.seen_by !== currentUserId) {
+            document.querySelectorAll('.seen-status').forEach(el => {
+                el.innerText = '✓✓';
+                el.classList.add('seen');
+            });
+        }
+        return;
+    }
+
+    // ✅ নিজের message — WebSocket echo ignore করো
+    // কারণ sendMessage() এ নিজেই append করা হয়
+    if (data.sender_id === currentUserId) return;
+
+    // ✅ অন্যজনের message দেখাও
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("msg-wrapper", "other");
+
+    const name = document.createElement("div");
+    name.classList.add("sender-name");
+    name.innerText = data.sender;
+    wrapper.appendChild(name);
+
+    if (data.msg_type === 'file') {
+        const el = buildFileElement(data.file_url, data.file_type, data.file_name);
+        wrapper.appendChild(el);
+    }
+
+    if (data.message && data.message.trim()) {
+        const msg = document.createElement("div");
+        msg.classList.add("msg");
+        msg.innerText = data.message;
+        wrapper.appendChild(msg);
+    }
+
+    const time = document.createElement("div");
+    time.classList.add("msg-time");
+    time.innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    wrapper.appendChild(time);
+
+    appendMessage(wrapper);
+
+    // ✅ অন্যজনের message দেখলে সাথে সাথে seen করো
+    fetch(markSeenUrl, {
+        method: "POST",
+        headers: { "X-CSRFToken": csrfToken }
+    });
+    socket.send(JSON.stringify({ type: 'seen' }));
+};
+
+// ===== BUILD FILE ELEMENT =====
+function buildFileElement(url, type, name) {
+    if (type === 'image') {
+        const img = document.createElement("img");
+        img.className = "msg-image";
+        img.src = url;
+        img.onclick = () => openLightbox(url);
+        return img;
+    } else if (type === 'video') {
+        const vid = document.createElement("video");
+        vid.className = "msg-video";
+        vid.controls = true;
+        vid.innerHTML = `<source src="${url}">`;
+        return vid;
+    } else {
+        const icon = type === 'pdf'
+            ? '<i class="fa fa-file-pdf file-icon" style="color:#ff4444;"></i>'
+            : type === 'docx'
+            ? '<i class="fa fa-file-word file-icon" style="color:#2b7cd3;"></i>'
+            : '<i class="fa fa-file file-icon" style="color:#aaa;"></i>';
+        const label = type === 'pdf' ? 'PDF Document'
+            : type === 'docx' ? 'Word Document' : 'File';
+        const a = document.createElement("a");
+        a.className = "msg-file";
+        a.href = url;
+        a.target = "_blank";
+        a.innerHTML = `${icon}<div><div class="file-name">${name}</div><div class="file-label">${label}</div></div>`;
+        return a;
+    }
+}
+
+// ===== SEND TEXT =====
+function sendMessage() {
+    const input = document.getElementById("msgInput");
+    const file = document.getElementById("fileInput").files[0];
+    const message = input.value.trim();
+
+    if (file) {
+        uploadFile(file, message);
+        return;
+    }
+
+    if (!message) return;
+
+    socket.send(JSON.stringify({ type: 'text', message: message }));
+
+    // ✅ নিজের message নিজে append করো
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("msg-wrapper", "me");
+
+    const msg = document.createElement("div");
+    msg.classList.add("msg");
+    msg.innerText = message;
+    wrapper.appendChild(msg);
+
+    const time = document.createElement("div");
+    time.classList.add("msg-time");
+    time.innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    wrapper.appendChild(time);
+
+    const seen = document.createElement("div");
+    seen.classList.add("seen-status");
+    seen.innerText = "✓";
+    wrapper.appendChild(seen);
+
+    appendMessage(wrapper);
+    input.value = "";
+}
+
+// ===== UPLOAD FILE =====
+function uploadFile(file, message) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    document.getElementById("uploadingText").classList.add("show");
+    document.getElementById("sendBtn").disabled = true;
+
+    fetch(uploadUrl, {
+        method: "POST",
+        headers: { "X-CSRFToken": csrfToken },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById("uploadingText").classList.remove("show");
+        document.getElementById("sendBtn").disabled = false;
+
+        socket.send(JSON.stringify({
+            type: 'file',
+            file_url: data.file_url,
+            file_type: data.file_type,
+            file_name: data.file_name,
+            message: message
+        }));
+
+        // ✅ নিজের file নিজে append করো
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("msg-wrapper", "me");
+
+        const el = buildFileElement(data.file_url, data.file_type, data.file_name);
+        wrapper.appendChild(el);
+
+        if (message) {
+            const msg = document.createElement("div");
+            msg.classList.add("msg");
+            msg.innerText = message;
+            wrapper.appendChild(msg);
+        }
+
+        const time = document.createElement("div");
+        time.classList.add("msg-time");
+        time.innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        wrapper.appendChild(time);
+
+        const seen = document.createElement("div");
+        seen.classList.add("seen-status");
+        seen.innerText = "✓";
+        wrapper.appendChild(seen);
+
+        appendMessage(wrapper);
+        removeFile();
+        document.getElementById("msgInput").value = "";
+    })
+    .catch(() => {
+        document.getElementById("uploadingText").classList.remove("show");
+        document.getElementById("sendBtn").disabled = false;
+        alert("File upload failed!");
+    });
+}
+
+// ===== FILE PREVIEW =====
+document.getElementById("fileInput").addEventListener("change", function() {
+    const file = this.files[0];
+    if (!file) return;
+
+    const thumb = document.getElementById("previewThumb");
+    thumb.innerHTML = "";
+
+    if (file.type.startsWith("image/")) {
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(file);
+        thumb.appendChild(img);
+    } else if (file.type.startsWith("video/")) {
+        const vid = document.createElement("video");
+        vid.src = URL.createObjectURL(file);
+        thumb.appendChild(vid);
+    } else {
+        const i = document.createElement("i");
+        i.className = file.name.endsWith(".pdf")
+            ? "fa fa-file-pdf fa-2x" : "fa fa-file-word fa-2x";
+        i.style.padding = "14px 10px";
+        thumb.appendChild(i);
+    }
+
+    document.getElementById("previewName").innerText = file.name;
+    document.getElementById("previewSize").innerText = (file.size / 1024).toFixed(1) + " KB";
+    document.getElementById("filePreview").classList.add("show");
+});
+
+function removeFile() {
+    document.getElementById("fileInput").value = "";
+    document.getElementById("filePreview").classList.remove("show");
+    document.getElementById("previewThumb").innerHTML = "";
+}
+
+// ===== ENTER KEY =====
+document.getElementById("msgInput").addEventListener("keypress", function(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+// ===== LIGHTBOX =====
+function openLightbox(src) {
+    document.getElementById("lightbox-img").src = src;
+    document.getElementById("lightbox").classList.add("show");
+}
+function closeLightbox() {
+    document.getElementById("lightbox").classList.remove("show");
+}
+
+// ===== SCROLL =====
+function scrollToBottom() {
+    const box = document.getElementById("chat-box");
+    box.scrollTop = box.scrollHeight;
+}
+
+function appendMessage(el) {
+    const box = document.getElementById("chat-box");
+    box.appendChild(el);
+    const img = el.querySelector("img.msg-image");
+    if (img) {
+        img.addEventListener("load", scrollToBottom);
+        img.addEventListener("error", scrollToBottom);
+    }
+    scrollToBottom();
+}
+
+// ===== NOTIFICATION PERMISSION =====
+if ("Notification" in window && Notification.permission !== "granted") {
+    Notification.requestPermission();
+}
+
+window.onload = () => {
+    const box = document.getElementById("chat-box");
+    const images = box.querySelectorAll("img.msg-image");
+    let total = images.length;
+
+    if (total === 0) { scrollToBottom(); return; }
+
+    let loaded = 0;
+    images.forEach(img => {
+        if (img.complete) {
+            loaded++;
+            if (loaded === total) scrollToBottom();
+        } else {
+            img.addEventListener("load", () => { loaded++; if (loaded === total) scrollToBottom(); });
+            img.addEventListener("error", () => { loaded++; if (loaded === total) scrollToBottom(); });
+        }
+    });
+};
+
+window.addEventListener("focus", () => {
+    document.title = "Chat with {{ other_user.full_name }}";
+});
+</script>
+
+</body>
+</html>

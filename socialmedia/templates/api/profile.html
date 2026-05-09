@@ -1,0 +1,296 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ profile_user.full_name }} | Profile</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-glow: #00f2ff;
+            --secondary-glow: #7f00ff;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background: #05070a;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(127, 0, 255, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(0, 242, 255, 0.15) 0%, transparent 40%);
+            color: white;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+        }
+
+        /* COVER */
+        .cover {
+            height: 280px;
+            background: linear-gradient(135deg, var(--secondary-glow), var(--primary-glow));
+            border-radius: 0 0 30px 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        .cover::after {
+            content: '';
+            position: absolute;
+            width: 100%; height: 100%;
+            background: url('https://www.transparenttextures.com/patterns/cubes.png');
+            opacity: 0.1;
+        }
+
+        /* PROFILE WRAP */
+        .profile-wrap {
+            text-align: center;
+            margin-top: -85px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* PROFILE PIC BOX */
+        .pic-box {
+            position: relative;
+            display: inline-block;
+            padding: 5px;
+            background: linear-gradient(var(--secondary-glow), var(--primary-glow));
+            border-radius: 50%;
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.3);
+        }
+        .profile-pic {
+            width: 160px; height: 160px;
+            border-radius: 50%;
+            border: 4px solid #05070a;
+            object-fit: cover;
+            background: #111;
+        }
+
+        /* EDIT ICON */
+        .edit-profile-icon-link {
+            position: absolute;
+            bottom: 8px; right: 8px;
+            text-decoration: none;
+        }
+        .edit-profile-icon {
+            background: #fff;
+            color: #000;
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center; justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .edit-profile-icon:hover {
+            transform: scale(1.15) rotate(15deg);
+            background: var(--primary-glow);
+            color: #000;
+        }
+
+        .profile-name {
+            margin-top: 15px;
+            font-weight: 700;
+            font-size: 2rem;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #fff, #888);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .profile-email {
+            color: var(--primary-glow);
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+        .profile-bio {
+            color: #b0b0b0;
+            max-width: 600px;
+            margin: 15px auto;
+            line-height: 1.6;
+        }
+
+        /* ✅ MESSAGE BUTTON */
+        .msg-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            background: linear-gradient(135deg, #7f00ff, #00c6ff);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(127, 0, 255, 0.3);
+            margin-top: 12px;
+        }
+        .msg-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 198, 255, 0.4);
+            color: white;
+        }
+        .msg-btn:active { transform: scale(0.97); }
+
+        /* POST CARD */
+        .post-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--glass-border);
+            transition: 0.4s;
+        }
+        .post-card:hover {
+            border-color: rgba(0,242,255,0.3);
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.05);
+        }
+
+        /* EMPTY STATE */
+        .empty-posts {
+            text-align: center;
+            padding: 60px 20px;
+            background: var(--glass-bg);
+            border-radius: 24px;
+            border: 2px dashed var(--glass-border);
+            margin-top: 20px;
+        }
+        .empty-posts i {
+            font-size: 50px;
+            color: var(--glass-border);
+            margin-bottom: 15px;
+            display: block;
+        }
+        .empty-posts h6 { color: #666; font-weight: 400; letter-spacing: 1px; }
+
+        /* ACTION BUTTONS */
+        .post-actions { margin-top: 15px; display: flex; gap: 10px; }
+        .btn-custom {
+            padding: 8px 18px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-edit { background: rgba(255,179,0,0.1); color: #ffb300; border: 1px solid rgba(255,179,0,0.3); }
+        .btn-delete { background: rgba(255,59,91,0.1); color: #ff3b5b; border: 1px solid rgba(255,59,91,0.3); }
+        .btn-edit:hover { background: #ffb300; color: #000; }
+        .btn-delete:hover { background: #ff3b5b; color: #fff; }
+
+        /* HOME BUTTON */
+        .home-btn {
+            position: absolute;
+            top: 20px; left: 20px;
+            width: 45px; height: 45px;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center; justify-content: center;
+            color: white;
+            font-size: 20px;
+            text-decoration: none;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: 0.3s;
+            z-index: 100;
+        }
+        .home-btn:hover { background: #00f2ff; color: black; transform: scale(1.1); }
+
+        /* RESPONSIVE */
+        @media (max-width: 576px) {
+            .cover { height: 180px; }
+            .profile-pic { width: 120px; height: 120px; }
+            .profile-name { font-size: 1.5rem; }
+            .profile-wrap { margin-top: -65px; }
+        }
+    </style>
+</head>
+<body>
+
+<a href="{% url 'home' %}" class="home-btn">
+    <i class="bi bi-house-door-fill"></i>
+</a>
+
+<div class="cover"></div>
+
+<div class="container">
+    <div class="profile-wrap">
+        <div class="pic-box">
+            <img class="profile-pic"
+                 src="{{ profile_user.profile.profile_picture.url }}"
+                 alt="Profile">
+
+            {% if request.user == profile_user %}
+            <a href="/profile/{{ profile_user.email }}/edit/" class="edit-profile-icon-link">
+                <div class="edit-profile-icon">
+                    <i class="bi bi-pencil-fill"></i>
+                </div>
+            </a>
+            {% endif %}
+        </div>
+
+        <h1 class="profile-name">{{ profile_user.full_name }}</h1>
+        <p class="profile-email">@{{ profile_user.email }}</p>
+        <p class="profile-bio">{{ profile.bio|default:"This user prefers to keep their mystery. No bio yet." }}</p>
+
+        <!-- ✅ MESSAGE BUTTON — নিজের profile এ দেখাবে না -->
+        {% if request.user != profile_user %}
+            <a href="{% url 'chat' profile_user.id %}" class="msg-btn">
+                <i class="bi bi-chat-dots-fill"></i>
+                Message
+            </a>
+        {% endif %}
+    </div>
+
+    <div class="mt-5 pb-5">
+        <div class="d-flex align-items-center mb-4">
+            <h4 class="mb-0" style="font-weight:700; color:#fff;">Timeline</h4>
+            <div class="ms-3 flex-grow-1" style="height:1px; background:var(--glass-border);"></div>
+        </div>
+
+        {% for post in posts %}
+        <div class="post-card">
+            <p style="font-size:16px; line-height:1.6; color:#eee;">{{ post.content }}</p>
+
+            {% if post.image %}
+                <img src="{{ post.image.url }}" class="img-fluid w-100 mt-2"
+                     style="border-radius:15px; border:1px solid var(--glass-border);">
+            {% endif %}
+
+            {% if request.user == post.user or request.user.is_superuser %}
+            <div class="post-actions">
+                <a href="{% url 'edit_post' post.pk %}" class="btn-custom btn-edit">
+                    <i class="bi bi-pencil"></i> Edit
+                </a>
+                <a href="{% url 'delete_post' post.pk %}" class="btn-custom btn-delete">
+                    <i class="bi bi-trash3"></i> Delete
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="empty-posts">
+            <i class="bi bi-chat-square-dots"></i>
+            <h6>No posts shared yet.</h6>
+            <p class="text-muted small">When this user shares a post, it will appear here.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+</body>
+</html>
