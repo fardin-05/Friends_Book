@@ -102,3 +102,6 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://socialmedia.onrender.com',
+]
