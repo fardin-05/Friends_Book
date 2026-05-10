@@ -1,6 +1,10 @@
 from pathlib import Path
 from decouple import config
 import dj_database_url
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -15,11 +19,13 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'cloudinary_storage',
     'django.contrib.staticfiles',
     'widget_tweaks',
     'rest_framework',
     'socialmedia',
     'channels',
+    'cloudinary',
 ]
 
 MIDDLEWARE = [
@@ -105,3 +111,14 @@ LOGOUT_REDIRECT_URL = 'login'
 CSRF_TRUSTED_ORIGINS = [
     'https://friends-book-nefr.onrender.com',
 ]
+
+
+
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'dvi5yknqy',
+    'API_KEY': '967179365793668',
+    'API_SECRET': '47ghuz2GysGlgKACJc6psw35lUI',
+}
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
