@@ -133,7 +133,7 @@ class Message(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(UserModel, on_delete=models.CASCADE)
     content = models.TextField()
-    file = models.FileField(upload_to='chat_files/', blank=True, null=True)
+    file = CloudinaryField('file', blank=True, null=True)
     file_type = models.CharField(max_length=20, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_seen = models.BooleanField(default=False)
