@@ -77,7 +77,7 @@ class Post(models.Model):
     # কোন ইউজার পোস্ট করেছে
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='posts')
     content = models.TextField(blank=True) # টেক্সট কন্টেন্ট
-    image = models.ImageField(upload_to='posts/', blank=True, null=True) # ছবি আপলোড
+    image = CloudinaryField('image', blank=True, null=True)  # ছবি আপলোড
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
