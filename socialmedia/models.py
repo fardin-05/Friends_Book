@@ -1,6 +1,9 @@
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+from cloudinary.models import CloudinaryField
+
+
 # Custom User Manager
 class UserManager (BaseUserManager):
     def create_user(self, email, full_name, password = None, **extra_fields):
@@ -62,9 +65,9 @@ class Profile(models.Model):
     user = models.OneToOneField(UserModel, on_delete=models.CASCADE, related_name='profile')
     bio = models.TextField(blank=True, null=True)
 
-    profile_picture = models.ImageField(
-        upload_to='profiles/',
-        default='profiles/default.jpg'
+    profile_picture = CloudinaryField(
+        'image',
+        default='default_qqhexk'
     )
     
     def __str__(self):
