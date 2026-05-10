@@ -525,7 +525,8 @@ document.addEventListener("click", function(e) {
 });
 
 // ===== INBOX WEBSOCKET (real-time badge) =====
-const inboxSocket = new WebSocket("ws://" + window.location.host + "/ws/inbox/");
+const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const inboxSocket = new WebSocket(protocol + "//" + window.location.host + "/ws/inbox/");
 let inboxCount = 0;
 
 inboxSocket.onmessage = function(e) {

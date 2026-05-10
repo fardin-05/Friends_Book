@@ -384,8 +384,9 @@ const markSeenUrl = "{% url 'mark_seen' conversation.id %}";
 const csrfToken = "{{ csrf_token }}";
 
 // ===== WEBSOCKET =====
+const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 const socket = new WebSocket(
-    "ws://" + window.location.host + "/ws/chat/" + conversationId + "/"
+    protocol + "//" + window.location.host + "/ws/chat/" + conversationId + "/"
 );
 
 // ✅ Page open হলে auto seen

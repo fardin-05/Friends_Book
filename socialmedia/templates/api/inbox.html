@@ -225,9 +225,8 @@ window.addEventListener("DOMContentLoaded", () => {
     cards.forEach(card => list.appendChild(card));
 });
 
-const inboxSocket = new WebSocket(
-    "ws://" + window.location.host + "/ws/inbox/"
-);
+const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const inboxSocket = new WebSocket(protocol + "//" + window.location.host + "/ws/inbox/");
 
 inboxSocket.onmessage = function(e) {
     const data = JSON.parse(e.data);
