@@ -57,6 +57,17 @@ body {
 }
 .back-btn:hover { opacity: 1; color: white; }
 
+/* ✅ Connection status indicator */
+.conn-status {
+    margin-left: auto;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    flex-shrink: 0;
+}
+.conn-status.connected { background: rgba(0,200,100,0.15); color: #00c864; }
+.conn-status.disconnected { background: rgba(255,80,80,0.15); color: #ff5050; }
+
 .chat-box {
     flex: 1;
     overflow-y: auto;
@@ -107,7 +118,6 @@ body {
     border-bottom-left-radius: 4px;
 }
 
-/* ✅ Link style */
 .msg a {
     color: #00c6ff;
     text-decoration: underline;
@@ -298,6 +308,7 @@ body {
         <img src="https://ui-avatars.com/api/?name={{ other_user.full_name }}&background=7f00ff&color=fff" alt="">
     {% endif %}
     <div class="name">{{ other_user.full_name }}</div>
+    <span class="conn-status connected" id="connStatus">● Live</span>
 </div>
 
 <div class="chat-box" id="chat-box">
@@ -397,7 +408,7 @@ const uploadUrl = "{% url 'upload_chat_file' conversation.id %}";
 const markSeenUrl = "{% url 'mark_seen' conversation.id %}";
 const csrfToken = "{{ csrf_token }}";
 
-// ✅ Link clickable করার function
+// ✅ Link clickable
 function linkify(text) {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     return text.replace(urlRegex, url =>
@@ -409,82 +420,124 @@ window.visualViewport?.addEventListener('resize', () => {
     scrollToBottom();
 });
 
-const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-const socket = new WebSocket(
-    protocol + "//" + window.location.host + "/ws/chat/" + conversationId + "/"
-);
+// ✅ Auto reconnect WebSocket
+let socket;
+let reconnectTimer;
 
-socket.onopen = function() {
-    fetch(markSeenUrl, {
-        method: "POST",
-        headers: { "X-CSRFToken": csrfToken }
-    });
-    socket.send(JSON.stringify({ type: 'seen' }));
-};
+function connectWebSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    socket = new WebSocket(
+        protocol + "//" + window.location.host + "/ws/chat/" + conversationId + "/"
+    );
 
-socket.onmessage = function(e) {
-    const data = JSON.parse(e.data);
+    socket.onopen = function() {
+        clearTimeout(reconnectTimer);
+        // ✅ Connection indicator
+        const status = document.getElementById("connStatus");
+        status.textContent = "● Live";
+        status.className = "conn-status connected";
 
-    if (document.hidden) {
-        document.title = "💬 New Message!";
-    }
+        fetch(markSeenUrl, {
+            method: "POST",
+            headers: { "X-CSRFToken": csrfToken }
+        });
+        socket.send(JSON.stringify({ type: 'seen' }));
+    };
 
-    if (data.sender_id !== currentUserId) {
-        document.getElementById("msgSound").play();
-        if (navigator.vibrate) navigator.vibrate(200);
-        if (Notification.permission === "granted") {
-            new Notification(data.sender || "New Message", {
-                body: data.message || "📎 Sent a file",
-                icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png"
-            });
+    socket.onclose = function() {
+        // ✅ Disconnected indicator
+        const status = document.getElementById("connStatus");
+        status.textContent = "● Reconnecting...";
+        status.className = "conn-status disconnected";
+
+        // ✅ 2 সেকেন্ড পর reconnect
+        reconnectTimer = setTimeout(connectWebSocket, 2000);
+    };
+
+    socket.onerror = function() {
+        socket.close();
+    };
+
+    socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+
+        if (document.hidden) {
+            document.title = "💬 New Message!";
         }
-    }
 
-    if (data.msg_type === 'seen') {
-        if (data.seen_by !== currentUserId) {
-            document.querySelectorAll('.seen-status').forEach(el => {
-                el.innerText = '✓✓';
-                el.classList.add('seen');
-            });
+        if (data.sender_id !== currentUserId) {
+            document.getElementById("msgSound").play();
+            if (navigator.vibrate) navigator.vibrate(200);
+            if (Notification.permission === "granted") {
+                new Notification(data.sender || "New Message", {
+                    body: data.message || "📎 Sent a file",
+                    icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png"
+                });
+            }
         }
-        return;
+
+        if (data.msg_type === 'seen') {
+            if (data.seen_by !== currentUserId) {
+                document.querySelectorAll('.seen-status').forEach(el => {
+                    el.innerText = '✓✓';
+                    el.classList.add('seen');
+                });
+            }
+            return;
+        }
+
+        if (data.sender_id === currentUserId) return;
+
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("msg-wrapper", "other");
+
+        const name = document.createElement("div");
+        name.classList.add("sender-name");
+        name.innerText = data.sender;
+        wrapper.appendChild(name);
+
+        if (data.msg_type === 'file') {
+            const el = buildFileElement(data.file_url, data.file_type, data.file_name);
+            wrapper.appendChild(el);
+        }
+
+        if (data.message && data.message.trim()) {
+            const msg = document.createElement("div");
+            msg.classList.add("msg");
+            msg.innerHTML = linkify(data.message);
+            wrapper.appendChild(msg);
+        }
+
+        const time = document.createElement("div");
+        time.classList.add("msg-time");
+        time.innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        wrapper.appendChild(time);
+
+        appendMessage(wrapper);
+
+        fetch(markSeenUrl, {
+            method: "POST",
+            headers: { "X-CSRFToken": csrfToken }
+        });
+        socket.send(JSON.stringify({ type: 'seen' }));
+    };
+}
+
+// ✅ Start connection
+connectWebSocket();
+
+// ✅ Page visible হলে reconnect + seen update
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === 'visible') {
+        if (!socket || socket.readyState === WebSocket.CLOSED) {
+            connectWebSocket();
+        }
+        fetch(markSeenUrl, {
+            method: "POST",
+            headers: { "X-CSRFToken": csrfToken }
+        });
     }
-
-    if (data.sender_id === currentUserId) return;
-
-    const wrapper = document.createElement("div");
-    wrapper.classList.add("msg-wrapper", "other");
-
-    const name = document.createElement("div");
-    name.classList.add("sender-name");
-    name.innerText = data.sender;
-    wrapper.appendChild(name);
-
-    if (data.msg_type === 'file') {
-        const el = buildFileElement(data.file_url, data.file_type, data.file_name);
-        wrapper.appendChild(el);
-    }
-
-    if (data.message && data.message.trim()) {
-        const msg = document.createElement("div");
-        msg.classList.add("msg");
-        msg.innerHTML = linkify(data.message); // ✅ linkify
-        wrapper.appendChild(msg);
-    }
-
-    const time = document.createElement("div");
-    time.classList.add("msg-time");
-    time.innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    wrapper.appendChild(time);
-
-    appendMessage(wrapper);
-
-    fetch(markSeenUrl, {
-        method: "POST",
-        headers: { "X-CSRFToken": csrfToken }
-    });
-    socket.send(JSON.stringify({ type: 'seen' }));
-};
+});
 
 function buildFileElement(url, type, name) {
     if (type === 'image') {
@@ -528,6 +581,13 @@ function sendMessage() {
 
     if (!message) return;
 
+    // ✅ Socket open কিনা check করো
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+        alert("Reconnecting... please try again.");
+        connectWebSocket();
+        return;
+    }
+
     socket.send(JSON.stringify({ type: 'text', message: message }));
 
     const wrapper = document.createElement("div");
@@ -535,7 +595,7 @@ function sendMessage() {
 
     const msg = document.createElement("div");
     msg.classList.add("msg");
-    msg.innerHTML = linkify(message); // ✅ linkify
+    msg.innerHTML = linkify(message);
     wrapper.appendChild(msg);
 
     const time = document.createElement("div");
@@ -586,7 +646,7 @@ function uploadFile(file, message) {
         if (message) {
             const msg = document.createElement("div");
             msg.classList.add("msg");
-            msg.innerHTML = linkify(message); // ✅ linkify
+            msg.innerHTML = linkify(message);
             wrapper.appendChild(msg);
         }
 
